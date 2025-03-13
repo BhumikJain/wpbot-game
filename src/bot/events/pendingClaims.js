@@ -20,8 +20,21 @@ async function handleOthersClaim(sock, claimId, sender) {
     
     // Check if chatId is a group chat before responding
     if (chatId.endsWith('@g.us')) {
-      // 35% chance to send "Fuck u" after someone else claims
-      if (Math.random() < 0.35) {
+
+      // 25% chance to send ".claim ${claimId}" after someone else claims
+      if (Math.random() < 0.25) {
+        try {
+          await sock.sendPresenceUpdate('composing', chatId);
+          const typingDuration = 500 + Math.floor(Math.random() * 500);
+          await new Promise(resolve => setTimeout(resolve, typingDuration));
+          await sock.sendMessage(chatId, { text: `.claim ${claimId}` });
+        } catch (error) {
+          logger.error(`Error sending ".claim ${claimId}" response:`, error);
+        }
+      }
+
+      // 25% chance to send "Fuck u" after someone else claims
+      if (Math.random() < 0.25) {
         try {
           await sock.sendPresenceUpdate('composing', chatId);
           const typingDuration = 500 + Math.floor(Math.random() * 500);
