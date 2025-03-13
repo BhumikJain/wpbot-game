@@ -1,26 +1,39 @@
-# Ignore WhatsApp Web.js authentication and cache
-/.wwebjs_auth
-/.wwebjs_cache
-
-# Ignore node_modules
+# Node.js dependencies
 node_modules/
+package-lock.json
+yarn.lock
+npm-debug.log
 
-# Ignore environment variables
+# WhatsApp session data (contains sensitive info)
+auth_info_baileys/
+
+# Log files
+logs/
+*.log
+
+# Environment variables
 .env
 
-# Ignore log files
-*.log
-logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# IDE/Editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Ignore build artifacts
+# macOS files
+.DS_Store
+
+# Temporary files
+Thumbs.db
+*.tmp
+
+# Build artifacts
 dist/
 build/
 
-# Ignore OS and editor files
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+# Assets (if you want to exclude stickers/media)
+# assets/stickers/*
+
+# Test files
+/test-results/
+coverage/

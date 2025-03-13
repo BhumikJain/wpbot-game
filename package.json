@@ -1,22 +1,18 @@
 {
-  "name": "wpbot",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@adiwajshing/baileys": "^5.0.0",
-    "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^6.7.16",
-    "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.26.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  }
+    "name": "whatsapp-bot",
+    "version": "1.0.0",
+    "description": "WhatsApp bot for auto-claiming cards",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js"
+    },
+    "dependencies": {
+        "@hapi/boom": "^10.0.1",
+        "@whiskeysockets/baileys": "^6.7.16",
+        "qrcode-terminal": "^0.12.0"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.22"
+    }
 }
