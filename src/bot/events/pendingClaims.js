@@ -1,4 +1,3 @@
-const { sendRandomResponse } = require('../utils/randomResponse');
 const logger = require('../utils/logger');
 
 // Storage for pending claims
