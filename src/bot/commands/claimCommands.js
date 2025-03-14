@@ -10,9 +10,9 @@ const logger = require('../utils/logger');
  */
 function extractMessageText(message) {
   if (!message || !message.message) return '';
-
+  
   const msg = message.message;
-
+  
   // Check for text in different message types
   if (msg.conversation) {
     return msg.conversation;
@@ -32,7 +32,7 @@ function extractMessageText(message) {
   } else if (msg.documentMessage && msg.documentMessage.caption) {
     return msg.documentMessage.caption;
   }
-
+  
   // If no text found, return empty string
   return '';
 }
@@ -43,7 +43,10 @@ function extractMessageText(message) {
 async function handleClaimCommands(sock, message, sender, chatId) {
   // Extract message text from any message type
   const messageText = extractMessageText(message);
-
+  
+  // Log the message type for debugging
+  // logger.debug(`Processing message type: ${JSON.stringify(Object.keys(message.message || {}))}`);
+  
   // Define regex patterns
   const claimPattern = /\.claim\s+([\w\d]+)/;
   const tierPattern = /⭐\s*\*Tier\*:\s*(\w+)/;
@@ -62,15 +65,19 @@ async function handleClaimCommands(sock, message, sender, chatId) {
     if (!claimMatch) return false;
 
     const claimId = claimMatch[1];
-
+    
     // Check if card name is in preferred list (if name was found)
     const cardName = nameMatch ? nameMatch[1].trim() : null;
+
+    // Log the detected card information
+    // logger.info(`Card detected - Tier: ${tier}, Name: ${cardName || 'Unknown'}, ClaimID: ${claimId}`);
 
     // Determine if we should claim the card
     const { shouldClaim, reason } = shouldClaimCard(tier, cardName);
 
     if (shouldClaim) {
-
+      // logger.info(`Claiming card: ${cardName || 'Unknown'} (${claimId}) - Reason: ${reason}`);
+      
       // Send after 1.5 second delay
       setTimeout(async () => {
         try {
@@ -96,11 +103,13 @@ async function handleClaimCommands(sock, message, sender, chatId) {
       }, 1500);
       return true;
     } else {
+      // logger.info(`Not claiming card: ${cardName || 'Unknown'} (${claimId}) - Reason: ${reason}`);
+      // Store in pending claims to monitor if someone else claims it
       addPendingClaim(claimId, chatId, cardName);
       return true;
     }
   }
-
+  
   // If this is a claim message from someone else (not the bot)
   else if (claimMatch && !message.key.fromMe) {
     const claimedId = claimMatch[1];
