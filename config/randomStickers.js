@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = [
-    path.join(__dirname, '../assets/stickers/download.webp.webp'),
+    path.join(__dirname, '../assets/stickers/download.webp'),
     path.join(__dirname, '../assets/stickers/download (1).webp'),
     path.join(__dirname, '../assets/stickers/download (2).webp'),
     path.join(__dirname, '../assets/stickers/download (3).webp'),

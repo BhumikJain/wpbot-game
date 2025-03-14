@@ -690,6 +690,7 @@ module.exports = [
     "Taroumaru",
     "Chevreuse",
     "Kinich and Ajaw",
-    "Xilonen"
+    "Xilonen",
+    "Makio"
 ];
 
