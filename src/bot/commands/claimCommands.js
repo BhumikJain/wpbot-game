@@ -2,6 +2,75 @@ const { shouldClaimCard } = require('../services/claimService');
 const { sendRandomResponse } = require('../utils/randomResponse');
 const { addPendingClaim, handleOthersClaim } = require('../events/pendingClaims');
 const logger = require('../utils/logger');
+const { isBotEnabled, getClaimDelay } = require('./adminCommands');
+
+// Claim queue implementation
+const claimQueue = [];
+let isProcessingQueue = false;
+
+/**
+ * Process the claim queue to ensure proper spacing between claims
+ */
+async function processClaimQueue() {
+  if (isProcessingQueue || claimQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  
+  try {
+    const claimTask = claimQueue.shift();
+    const { sock, chatId, claimId, cardName, reason, delay } = claimTask;
+    
+    logger.info(`Processing queued claim: ${cardName || 'Unknown'} (${claimId}) with delay ${delay}ms - Reason: ${reason}`);
+    const startTime = Date.now();
+    
+    // Wait for the configured delay
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    // Simulate typing
+    await sock.sendPresenceUpdate('composing', chatId);
+    const typingDuration = 500 + Math.floor(Math.random() * 1000);
+    await new Promise(resolve => setTimeout(resolve, typingDuration));
+    
+    // Send the claim message
+    await sock.sendMessage(chatId, { text: `.claim ${claimId}` });
+    
+    const actualTime = Date.now() - startTime;
+    logger.info(`Card ${claimId} claimed in ${actualTime}ms (configured delay: ${delay}ms, typing: ~${typingDuration}ms)`);
+    
+    // 80% chance to send follow-up message
+    if (Math.random() < 0.8) {
+      // Random delay between 3 and 8 seconds
+      const randomDelay = 3000 + Math.floor(Math.random() * 5000);
+      setTimeout(async () => {
+        await sendRandomResponse(sock, chatId);
+      }, randomDelay);
+    }
+    
+    // Add buffer time between claims (at least 2 seconds)
+    const bufferTime = Math.max(2000, delay * 0.2); // 20% of delay or at least 2 seconds
+    
+    // Wait before processing the next claim
+    await new Promise(resolve => setTimeout(resolve, bufferTime));
+    
+  } catch (error) {
+    logger.error('Error processing claim queue:', error);
+  } finally {
+    isProcessingQueue = false;
+    
+    // Process next claim if any
+    if (claimQueue.length > 0) {
+      processClaimQueue();
+    }
+  }
+}
+
+/**
+ * Adds a claim to the queue
+ */
+function queueClaim(sock, chatId, claimId, cardName, reason, delay) {
+  claimQueue.push({ sock, chatId, claimId, cardName, reason, delay });
+  processClaimQueue();
+}
 
 /**
  * Extract text content from different message types
@@ -41,11 +110,13 @@ function extractMessageText(message) {
  * Handle claim commands from any message type
  */
 async function handleClaimCommands(sock, message, sender, chatId) {
+  // Check if bot is enabled
+  if (!isBotEnabled()) {
+    return false;
+  }
+  
   // Extract message text from any message type
   const messageText = extractMessageText(message);
-  
-  // Log the message type for debugging
-  // logger.debug(`Processing message type: ${JSON.stringify(Object.keys(message.message || {}))}`);
   
   // Define regex patterns
   const claimPattern = /\.claim\s+([\w\d]+)/;
@@ -69,41 +140,20 @@ async function handleClaimCommands(sock, message, sender, chatId) {
     // Check if card name is in preferred list (if name was found)
     const cardName = nameMatch ? nameMatch[1].trim() : null;
 
-    // Log the detected card information
-    // logger.info(`Card detected - Tier: ${tier}, Name: ${cardName || 'Unknown'}, ClaimID: ${claimId}`);
-
     // Determine if we should claim the card
     const { shouldClaim, reason } = shouldClaimCard(tier, cardName);
 
     if (shouldClaim) {
-      // logger.info(`Claiming card: ${cardName || 'Unknown'} (${claimId}) - Reason: ${reason}`);
+      // Get the current claim delay
+      const delay = getClaimDelay();
       
-      // Send after 1.5 second delay
-      setTimeout(async () => {
-        try {
-          // Simulate typing
-          await sock.sendPresenceUpdate('composing', chatId);
-          const typingDuration = 500 + Math.floor(Math.random() * 500);
-          await new Promise(resolve => setTimeout(resolve, typingDuration));
-
-          // Send claim message
-          await sock.sendMessage(chatId, { text: `.claim ${claimId}` });
-
-          // 80% chance to send follow-up message
-          if (Math.random() < 0.8) {
-            // Random delay between 3 and 8 seconds
-            const randomDelay = 3000 + Math.floor(Math.random() * 5000);
-            setTimeout(async () => {
-              await sendRandomResponse(sock, chatId);
-            }, randomDelay);
-          }
-        } catch (error) {
-          logger.error('Error during card claiming:', error);
-        }
-      }, 1500);
+      // Log basic info that we're queueing
+      logger.info(`Queueing claim for card: ${cardName || 'Unknown'} (${claimId}) - Reason: ${reason}`);
+      
+      // Queue the claim instead of directly using setTimeout
+      queueClaim(sock, chatId, claimId, cardName, reason, delay);
       return true;
     } else {
-      // logger.info(`Not claiming card: ${cardName || 'Unknown'} (${claimId}) - Reason: ${reason}`);
       // Store in pending claims to monitor if someone else claims it
       addPendingClaim(claimId, chatId, cardName);
       return true;
@@ -120,4 +170,8 @@ async function handleClaimCommands(sock, message, sender, chatId) {
   return false;
 }
 
-module.exports = { handleClaimCommands };
+module.exports = { 
+  handleClaimCommands,
+  queueClaim,
+  processClaimQueue
+};

@@ -1,5 +1,5 @@
 async function helpCommand(sock, chatId) {
-    const helpText = `*📚 BOT COMMANDS GUIDE 📚*
+  const helpText = `*📚 BOT COMMANDS GUIDE 📚*
   
   *ADMINISTRATION*
   - *$opbot-add-number* [number] - 📱 Add number to allowed list
@@ -14,12 +14,18 @@ async function helpCommand(sock, chatId) {
   - *$opbot-col* - 🔄 Send collection command
   - *$opbot-help* - ❓ Show this help menu
   
+  *BOT CONTROL* 
+  - *$opbot-on* - 🟢 Enable bot and all commands
+  - *$opbot-off* - 🔴 Disable bot and all commands
+  - *$opbot-time* [ms] - ⏱️ Set claim delay in milliseconds
+  - *$opbot-get-time* - ⏱️ Show current claim delay time
+
   *Formats:* 
-  \`$opbot-set-prob tierS 0.8\`
-  \`$opbot-add-number 123456789\``;
-  
-    await sock.sendMessage(chatId, { text: helpText });
-    return true;
-  }
-  
-  module.exports = { helpCommand };
+  - $opbot-set-prob 5 0.75 → Sets 75% claim chance for tier 5 cards
+  - $opbot-set-prob preferred 0.9 → Sets 90% claim chance for preferred cards`;
+
+  await sock.sendMessage(chatId, { text: helpText });
+  return true;
+}
+
+module.exports = { helpCommand };

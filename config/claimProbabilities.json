@@ -1,6 +1,10 @@
 {
   "preferred": 1,
   "tierS": 1,
-  "tier4to6": 0.8,
-  "tier1to3": 0.45
+  "tier6": 0.8,
+  "tier5": 0.7,
+  "tier4": 0.6,
+  "tier3": 0.5,
+  "tier2": 0.3,
+  "tier1": 0.2
 }

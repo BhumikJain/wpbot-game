@@ -10,7 +10,7 @@ function setupConnectionHandler(sock) {
 
     // If connected successfully
     if (connection === 'open') {
-      logger.info('✅ Connected to WhatsApp!');
+      logger.info('✅ Connected to WhatsApp as an Android device!');
     }
 
     // If disconnected

@@ -1,53 +1,66 @@
-const { handleAdminCommands } = require('../commands/adminCommands');
+const { handleAdminCommands, isBotEnabled } = require('../commands/adminCommands');
 const { handleClaimCommands } = require('../commands/claimCommands');
 const { handleGameCommands } = require('../commands/gameCommands');
 const { isAllowedNumber } = require('../services/adminService');
 const logger = require('../utils/logger');
+const { getDevice } = require("@whiskeysockets/baileys");
 
 function setupMessageHandler(sock) {
   sock.ev.on('messages.upsert', async ({ messages }) => {
-    for (const message of messages) {
-      try {
-        // Skip status messages and messages without content
-        if (message.key.remoteJid === 'status@broadcast' || !message.message) continue;
-
-        // Get the chat ID
+    try {
+      for (const message of messages) {
         const chatId = message.key.remoteJid;
+        
+        // Skip status updates and non-group messages
+        if (chatId === 'status@broadcast' || !chatId.endsWith('@g.us')) continue;
+        if (!message.message) continue;
 
-        // Check if this is a group chat (group IDs end with "@g.us")
-        const isGroupChat = chatId.endsWith('@g.us');
+        const senderJid = message.key.participant || chatId;
+        const sender = senderJid.split('@')[0];
+        const messageText = getMessageText(message);
 
-        // Skip if not a group chat
-        if (!isGroupChat) continue;
+        // Device detection
+        const deviceType = getDevice(message.key.id);
+        logger.debug(`Message from ${sender} received via ${deviceType}`);
 
-        // Get the message text
-        const messageText = message.message.conversation ||
-          message.message.extendedTextMessage?.text ||
-          message.message.imageMessage?.caption || '';
-
-        // Get sender ID
-        const author = message.key.participant || message.key.remoteJid;
-        const sender = author.split('@')[0];
-
-        // Process admin commands (first priority)
+        // Admin commands have priority - always process regardless of bot status
         if (messageText.startsWith('$opbot-')) {
           await handleAdminCommands(sock, message, sender, chatId, messageText);
           continue;
         }
 
-        // For non-admin commands, check if sender is allowed
-        if (!isAllowedNumber(sender)) continue;
+        // If bot is disabled, don't process any other commands
+        if (!isBotEnabled()) {
+          continue;
+        }
 
-        // Handle game-related commands
+        // Check user permissions for non-admin commands
+        if (!isAllowedNumber(sender)) {
+          logger.warn(`Unauthorized access attempt by ${sender}`);
+          continue;
+        }
+
+        // Process game commands
         await handleGameCommands(sock, message, sender, chatId, messageText);
 
-        // Handle claim patterns
-        await handleClaimCommands(sock, message, sender, chatId, messageText);
-      } catch (error) {
-        logger.error('Error processing message:', error);
+        // Process claim commands
+        await handleClaimCommands(sock, message, sender, chatId);
       }
+    } catch (error) {
+      logger.error('Fatal error processing messages:', error);
     }
   });
+}
+
+/**
+ * Extracts message text from different message types
+ */
+function getMessageText(message) {
+  return message.message?.conversation ||
+         message.message?.extendedTextMessage?.text ||
+         message.message?.imageMessage?.caption ||
+         message.message?.videoMessage?.caption ||
+         '';
 }
 
 module.exports = { setupMessageHandler };
