@@ -1,11 +1,13 @@
 module.exports = [
-    "Le bc kr claim",
+    "Le bc krli claim",
     "Letss goooo",
     "damn",
-    "cheetah hi kehde",
-    "Op bolte chadi kholte",
+    "cheethi hi kehde",
+    "Op bolte chadi kholte hheheheeheh",
     "demn",
     ".col",
     "bc",
-    "Sher hi kehde"
+    "heheheheh",
+    "muhehehe",
+    "ab no one ko bek ke paise kamaungi"
 ];
